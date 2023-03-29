@@ -1,8 +1,6 @@
 <?php
 require_once 'conn.php';
 require_once 'token.php';
-
-
  
 if ($_SERVER['REQUEST_METHOD'] == "GET") {
 
