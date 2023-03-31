@@ -1,49 +1,62 @@
 <?php
-if (isset($_FILES['resim'])) {
-    $yuklenemeyenler = array(); //yüklenemeyen ve hatası dönen resimleri bu dizide tutacağız.
+header('Access-Control-Allow-Origin: *');
+header("Access-Control-Allow-Methods: GET, POST, OPTIONS, PUT, DELETE");
+header("Access-Control-Allow-Headers: Content-Disposition, Content-Type, Content-Length, Accept-Encoding");
+header("Content-type:application/json");
 
-    $klasor = "upload/"; //yükleyeceğimiz klasörü belirledik.
-
-    //Artık resimlerimiz dizi olarak geldiği için bir döngü ile tek tek kontrol ve kayıt etmemiz gerekiyor.
-    $resim_sayisi = count($_FILES['resim']['name']); //kaç tane resim geldiğini öğrendik.
-    for ($i = 0; $i < $resim_sayisi; $i++) {
-        //resim sayısı kadar döngüye soktuk.
-
-        $resimBoyutu = $_FILES['resim']['size'][$i]; //döngü içerisindeki resmin boyutunu öğrendik.
-        $tip = $_FILES['resim']['type'][$i]; //resim tipini öğrendik.
-        $resimAdi = $_FILES['resim']['name'][$i]; //resmin adını öğrendik.
-
-        if ($tip == 'image/jpeg' || $tip == 'image/jpg' || $tip == 'image/png') { //uzantısnın kontrolünü sağladık. sadece .jpg ve .png yükleyebilmesi için.
-            if (move_uploaded_file($_FILES["resim"]["tmp_name"][$i], $klasor . "/" . $_FILES['resim']['name'][$i])) {
-                //tmp_name ile resmi bulduk ve nereye, hangi isimle yukleneceğini belirleyip yükledik.
-                //yükleme işlemi başarılı olursa dilediğiniz bir olayı gerçekleştirebilirsiniz.
-            } else
-                $yuklenemeyenler[] = $_FILES['resim']['name'][$i] . " BİLİNMİYOR";
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_FILES['images'])) {
+    
+    $target_dir = "upload/"; // specify target directory
+    
+    // Loop through all uploaded files
+    $count = count($_FILES['images']['name']);
+    for ($i = 0; $i < $count; $i++) {
+        
+        $target_file = $target_dir . basename($_FILES["images"]["name"][$i]); // get the name of the file
+        $imageFileType = strtolower(pathinfo($target_file,PATHINFO_EXTENSION)); // get the extension of the file
+        
+        // Check if file is an image
+        $check = getimagesize($_FILES["images"]["tmp_name"][$i]);
+        if($check === false) {
+            http_response_code(400);
+            echo 'Error: File '. ($i+1) .' is not an image.';
+            exit;
+        }
+        
+        // Check if file already exists
+        if (file_exists($target_file)) {
+            http_response_code(409);
+            echo 'Error: File '. ($i+1) .' already exists.';
+            exit;
+        }
+        
+        // Check file size
+        if ($_FILES["images"]["size"][$i] > 5000000) {
+            http_response_code(413);
+            echo 'Error: File '. ($i+1) .' is too large.';
+            exit;
+        }
+        
+        // Allow only certain file formats
+        if($imageFileType != "jpg" && $imageFileType != "png" && $imageFileType != "jpeg"
+        && $imageFileType != "gif" ) {
+            http_response_code(415);
+            echo 'Error: Only JPG, JPEG, PNG & GIF files are allowed.';
+            exit;
+        }
+        
+        // Move the file to the target directory
+        if (move_uploaded_file($_FILES["images"]["tmp_name"][$i], $target_file)) {
+            echo "The file ". htmlspecialchars( basename( $_FILES["images"]["name"][$i])). " has been uploaded.";
         } else {
-            $yuklenemeyenler[] = $_FILES['resim']['name'][$i] . " UZANTI";
+            http_response_code(500);
+            echo "Sorry, there was an error uploading your file.";
         }
     }
-    if (count($yuklenemeyenler) > 0) {
-        echo "Aşağıdaki Resimler Yüklenemedi. <br />";
-        var_dump($yuklenemeyenler);
-    } else
-        echo "TÜM RESİMLER BAŞARILI BİR ŞEKİLDE YÜKLENDİ.";
+    
+} else {
+    http_response_code(405);
+    echo 'Error: Method not allowed.';
+    exit;
 }
 ?>
-<!doctype html>
-<html>
-
-<head>
-    <title>Form Sayfası | Resim Yükleme</title>
-</head>
-
-<body>
-    <form action="upload.php" method="post" enctype="multipart/form-data">
-        <input type="file" name="resim[]" multiple="multiple" />
-        <!-- burada multiple ifadesi bilgisayar üzerinden seçimin çoklu olacağını belirtir. -->
-        <!-- name="resim[]" nameden sonra gelen [] ibaresi post edildiği zaman seçilen değerlerin dizi halinde post edilmesini sağlar. -->
-        <button type="submit">YÜKLE</button>
-    </form>
-</body>
-
-</html>
