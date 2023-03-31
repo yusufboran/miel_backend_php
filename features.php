@@ -1,46 +1,43 @@
 <?php
+header('Access-Control-Allow-Origin: *');
+header("Access-Control-Allow-Methods: GET, POST, OPTIONS, PUT, DELETE");
+header("Access-Control-Allow-Headers: Content-Disposition, Content-Type, Content-Length, Accept-Encoding");
+header("Content-type:application/json");
 require_once 'conn.php';
 require_once 'token.php';
 
+$data = json_decode(file_get_contents("php://input"));
+
 if ($_SERVER['REQUEST_METHOD'] == "GET") {
     $sql = "SELECT * FROM features;";
-} elseif ($_SERVER['REQUEST_METHOD'] == "POST") {
-    $method = $_POST['method'];
-    $token = $_POST['token'];
-
-    $isTokenValid = checkTokenValidity($dbconn, $token);
-    if (!$isTokenValid) {
-        die("Token is invalid");
-    }
-
-    switch ($method) {
-        case 'post':
-            if (!empty($_POST['title']) && !empty($_POST['trtext']) && !empty($_POST['entext'])) {
-                $sql = "INSERT INTO features (title, trtext,entext) VALUES ('{$_POST['title']}', '{$_POST['trtext']}', '{$_POST['entext']}')";
-            } else {
-                die("Missing fields");
-            }
-            break;
-        case 'delete':
-            if (!empty($_POST['id'])) {
-                $sql = "DELETE FROM features WHERE id = '{$_POST['id']}'";
-            } else {
-                die("Missing fields");
-            }
-            break;
-        case 'update':
-            if (!empty($_POST['id']) && !empty($_POST['title']) && !empty($_POST['trtext']) && !empty($_POST['entext'])) {
-                $sql = "UPDATE features SET title='{$_POST['title']}', trtext='{$_POST['trtext']}',entext='{$_POST['entext']}' WHERE id='{$_POST['id']}'";
-            } else {
-                die("Missing fields");
-            }
-            break;
-        default:
-            die("Invalid method");
-    }
-} else {
-    die("Invalid request method");
 }
+
+if ($_SERVER['REQUEST_METHOD'] == "POST") {
+    if (!empty($data->title) && !empty($data->trtext) && !empty($data->entext)) {
+        $sql = "INSERT INTO features (title, trtext,entext) VALUES ('{$data->title}', '{$data->trtext}', '{$data->entext}')";
+    } else {
+        die("Missing fields");
+    }
+}
+
+if ($_SERVER['REQUEST_METHOD'] == "DELETE") {
+    if (!empty($data->id)) {
+        $sql = "DELETE FROM features WHERE id = '{$data->id}'";
+    } else {
+        die("Missing fields");
+    }
+}
+
+if ($_SERVER['REQUEST_METHOD'] == "update") {
+
+    if (!empty($data->id) && !empty($data->title) && !empty($data->trtext) && !empty($data->entext)) {
+        $sql = "UPDATE features SET title='{$data->title}', trtext='{$data->trtext}',entext='{$data->entext}' WHERE id='{$data->id}'";
+    } else {
+        die("Missing fields");
+    }
+}
+
+
 
 $result = pg_query($dbconn, $sql) or die('Error message: ' . pg_last_error());
 $rows = pg_fetch_all($result);
