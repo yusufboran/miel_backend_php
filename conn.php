@@ -1,5 +1,4 @@
 <?php
-
 $dbhost = 'localhost';
 $dbname = 'postgres';
 $dbuser = 'postgres';

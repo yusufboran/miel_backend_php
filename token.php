@@ -12,15 +12,17 @@ function tokenGenerator($dbconn)
 
 function checkTokenValidity($dbconn, $token)
 {
-    try {
-        $sql = "SELECT final_time FROM public.token_list where token = '" . $token . "'";
-        $result = pg_query($dbconn, $sql) or die('Error message: ' . pg_last_error());
 
+    try {
+        $sql = "SELECT final_time FROM public.token_list where token = '" . $token . "';";
+        $result = pg_query($dbconn, $sql) or die('Error message: ' . pg_last_error());
+       
         if (!$result || pg_num_rows($result) == 0) {
             return false;
         }
+       
         $final_time = intval(pg_fetch_result($result, 0, 'final_time'));
-
+    
         if ($final_time > time()) {
             return "true";
         }

@@ -50,7 +50,7 @@ if ($_SERVER['REQUEST_METHOD'] == "GET") {
 
             $jsonString = "{\"Havalimanına yakın\",\"Hastaneye yakın\"}";
             $array = json_decode('[' . $features_str . ']', true);
-            $item->features =$array;
+            $item->features = $array;
 
             $item->created_at = $row['created_at'];
             $item->pid = $row['pid'];
@@ -87,16 +87,14 @@ if ($_SERVER['REQUEST_METHOD'] == "GET") {
 }
 
 if ($_SERVER['REQUEST_METHOD'] == "DELETE") {
-    $sql = "SELECT * FROM  project_file where project = '" . $data->id . "';";
+    $sql = "SELECT image_path FROM  project_file where project = '" . $data->id . "';";
     $result = pg_query($dbconn, $sql);
     $files = pg_fetch_all($result);
 
     foreach ($files as &$file) {
-        unlink("./uploads/" . $file);
+        unlink("./upload/" . $file["image_path"]);
     }
-
     $sql = "DELETE from project where pid ='" . $data->id . "';";
-    $sql = $sql . "DELETE FROM  project_file where project = '" . $data->id . "';";
 
 }
 
@@ -128,12 +126,36 @@ if ($_SERVER['REQUEST_METHOD'] == "POST") {
 
 if ($_SERVER['REQUEST_METHOD'] == "PUT") {
 
-    if (!empty($data->id) && !empty($data->title) && !empty($_POST['trtext']) && !empty($_POST['entext'])) {
-        $sql = "UPDATE features SET title='{$data->title}', trtext='{$_POST['trtext']}',entext='{$_POST['entext']}' WHERE id='{$data->id}'";
-    } else {
-        die("Missing fields");
+
+    $features = "'" . implode("', '", $data->features) . "'";
+
+    $sql = "UPDATE project SET projectName='" . $data->projectName . "', descriptionen='" . $data->descriptionEN . "',
+    descriptiontr='" . $data->descriptionTR . "', features= ARRAY[" . $features . "], created_at=now() WHERE pid='" . $data->pid . "';";
+
+
+    if (isset($data->deleteImg) && $data->deleteImg) {
+        echo "girdi*****************************************************************";
+        $sql = $sql . "DELETE FROM project_file WHERE id IN (";
+        foreach ($data->deleteImg as $id) {
+
+            $sql = $sql . $id . " ,";
+        }
+        $sql = rtrim($sql, ",");
+        $sql = $sql . "); ";
     }
 
+
+
+
+    if (isset($data->paths) && $data->paths) {
+        $sql = $sql . "INSERT INTO public.project_file (project, image_path)  VALUES";
+        foreach ($data->paths as $image) {
+            $sql = $sql . "(' $data->pid ', '$image')";
+        }
+        $sql = $sql . "; ";
+    }
+
+    echo $sql;
 }
 
 
