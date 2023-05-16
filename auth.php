@@ -7,9 +7,6 @@ require_once 'conn.php';
 
 $data = json_decode(file_get_contents("php://input"));
 
-
-var_dump($data );
-
 if ($_SERVER['REQUEST_METHOD'] == "POST") {
 
     // $token = $_POST['token'];
@@ -28,6 +25,7 @@ if ($_SERVER['REQUEST_METHOD'] == "POST") {
 
                 if ($user) {
                     echo "Böyle bir hesap mevcut";
+                    http_response_code(400);
                     return;
                 }
 
